@@ -171,7 +171,7 @@ echo -e "WARNING, keep this in safe plase \nYour pass is: ${passData}"
 
 md5Pass=`echo ${passData} |$APP_MD5SUM |$APP_AWK '{ print $1 }'`
 md5SortBoth=`echo -e "${md5Pass}\n${md5File}"  |$APP_MD5SUM  |$APP_AWK '{ print $1 }' | $APP_GREP -o . | $APP_SORT |tr -d "\n"`
-md5Encode=`echo -e "${md5Pass}\n${md5File}\n${md5SortBoth}"  |$APP_MD5SUM  |awk '{ print $1 }'`
+md5Encode=`echo -e "${md5Pass}\n${md5File}\n${md5SortBoth}"  |$APP_MD5SUM  |$APP_AWK '{ print $1 }'`
 
 dataArray=( `for I in {A..Z};do echo -en "${I} ";done;for I in {a..z};do echo -en "${I} ";done;for I in {0..9};do echo -en "${I} ";done` )
 for _iterator in ${!dataArray[*]};do
