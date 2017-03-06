@@ -29,7 +29,7 @@ The usage of the script if the next
         [user@host ~]$ /home/user/passGenerator.rdc -c 12
         You don't enter a number
         [user@host ~]$ /home/user/passGenerator.rdc "-c 12"
-        8B6-_lIYW.y3
+        8B6-_lXXXXX
 
                                                                                                                                                                                                                   
 ### RDCARRERA
