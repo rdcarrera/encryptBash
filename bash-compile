@@ -1,0 +1,224 @@
+#!/bin/bash
+#"Compile" a bash script
+#Created by: @rdcarrera
+#Version: 0.1
+
+[ $# -eq 0 ] && echo "You must give a file" && exit 1;
+[ ! -f $1 ] &&  echo "Sorry the param you enter isn't a file" && exit 1;
+
+function CheckAppToConstant()
+{
+    if [ -x $2 ] && [ ! -z $2 ];then
+        export $1="$2"
+    else
+        [ -z $APP_SED ] && echo "For the corect execution of this program, you must edit $0 with the path of sed" && exit 1
+        local _logicCheckAppToConstant=1
+        while [ ${_logicCheckAppToConstant} -eq 1 ];do
+            echo "You must define $1 with a valid path, (Write no to cancel):"
+            read rutaApp
+            if [ "${rutaApp}" == no ];then
+                echo "You cancel the execution of this program"
+                exit 1
+            fi
+            if [ -x ${rutaApp} ] && [ ! -z ${rutaApp} ];then
+                export $1="${rutaApp}"
+                $APP_SED -i "s|CheckAppToConstant $1.*|CheckAppToConstant $1 ${rutaApp};|" $0
+                _logicCheckAppToConstant=0
+            fi
+        done
+    fi
+}
+
+CheckAppToConstant APP_SED /bin/sed;
+CheckAppToConstant APP_GCC /usr/bin/gcc;
+CheckAppToConstant APP_GPG /usr/bin/gpg;
+CheckAppToConstant APP_MKTEMP /usr/bin/mktemp;
+CheckAppToConstant APP_SEQ /usr/bin/seq;
+CheckAppToConstant APP_BC /usr/bin/bc;
+CheckAppToConstant APP_BASENAME /usr/bin/basename;
+CheckAppToConstant APP_AWK /usr/bin/awk;
+CheckAppToConstant APP_MD5SUM /usr/bin/md5sum;
+CheckAppToConstant APP_MKDIR /usr/bin/mkdir;
+CheckAppToConstant APP_CHMOD /usr/bin/chmod;
+CheckAppToConstant APP_DIRNAME /usr/bin/dirname;
+CheckAppToConstant APP_GREP /bin/grep;
+CheckAppToConstant APP_SORT /usr/bin/sort;
+CheckAppToConstant APP_UNIQ /usr/bin/uniq;
+
+fileName=`$APP_BASENAME $1 |$APP_AWK -F. '{ print $1 }'`
+md5File=`$APP_MD5SUM $1 |$APP_AWK -F. '{ print $1 }'`
+
+unset _ofuscateArray
+unset dataArray
+unset parseString
+unset offuscatePass
+unset offuscateParsePass
+
+ARRAYOFPARAMETERS=( "low" "upper" )
+ARRAYlow=( a b c d e f g h i j k l m n o p q r s t u v w x y z )
+ARRAYupper=( A B C D E F G H I J K L M N O P Q R S T U V W X Y Z )
+charactersNumber=2000
+
+
+function CalculateValue()
+{
+    _tempArrayName="ARRAY$1[@]"
+    _tempArray=( "${!_tempArrayName}" )
+    randomPosition=$(echo $RANDOM%${#_tempArray[*]} |$APP_BC )
+    _tempValue=${_tempArray[${randomPosition}]}
+    echo "${_tempValue}"
+}
+
+numberOfOptionals=0
+for _iteratorOptionals in ${!ARRAYOFPARAMETERS[*]};do
+    _tempVarName="${ARRAYOFPARAMETERS[${_iteratorOptionals}]}Number"
+    [ ! -z ${!_tempVarName} ] && numberOfOptionals=`echo ${numberOfOptionals}+${!_tempVarName}|$APP_BC`
+done
+
+[ ${numberOfOptionals} -gt ${charactersNumber} ] && echo "You password lengh specify \"${charactersNumber}\" is less of other parameters \"${numberOfOptionals}\"" && exit 1
+
+declare -a arrayNumbers
+for _iteratorArrayNumbersDeclare in `$APP_SEQ 0 $(echo ${charactersNumber}-1|$APP_BC)`;do
+    arrayNumbers[${_iteratorArrayNumbersDeclare}]=${_iteratorArrayNumbersDeclare}
+done
+
+autoGenerateCharacterPassword=$(echo ${charactersNumber}-${numberOfOptionals}|$APP_BC)
+
+declare -a passwordValue
+for _iteratorOptionals2 in ${!ARRAYOFPARAMETERS[*]};do
+    _tempVarName="${ARRAYOFPARAMETERS[${_iteratorOptionals2}]}Number"
+    if [ ! -z ${!_tempVarName} ] && [ ${!_tempVarName} -gt 0 ];then
+        for _iterator in `$APP_SEQ 1 ${!_tempVarName}`;do
+            characterValue=`CalculateValue ${ARRAYOFPARAMETERS[${_iteratorOptionals2}]}`
+            _tempCharPosition=$(echo $RANDOM%${#arrayNumbers[*]}|$APP_BC)
+            charPosition=arrayNumbers[${_tempCharPosition}]
+            passwordValue[${charPosition}]=${characterValue}
+            unset arrayNumbers[${_tempCharPosition}]
+            arrayNumbers=( "${arrayNumbers[@]}" )
+
+        done
+    fi
+done
+
+if [ ${autoGenerateCharacterPassword} -gt 0 ];then
+    for _iteratorAutomatic in `$APP_SEQ 1 ${autoGenerateCharacterPassword}`;do
+        randomArray=$(echo $RANDOM%${#ARRAYOFPARAMETERS[*]}|$APP_BC)
+        characterValue=`CalculateValue ${ARRAYOFPARAMETERS[${randomArray}]}`
+        _tempCharPosition=$(echo $RANDOM%${#arrayNumbers[*]}|$APP_BC)
+        charPosition=arrayNumbers[${_tempCharPosition}]
+        passwordValue[${charPosition}]=${characterValue}
+        unset arrayNumbers[${_tempCharPosition}]
+        arrayNumbers=( "${arrayNumbers[@]}" )
+
+    done
+fi
+
+passData=`echo ${passwordValue[@]} |sed "s/ //g"`
+
+echo -e "WARNING, keep this in safe plase \nYour pass is: ${passData}"
+
+md5Pass=`echo ${passData} |$APP_MD5SUM |$APP_AWK '{ print $1 }'`
+md5SortBoth=`echo -e "${md5Pass}\n${md5File}"  |$APP_MD5SUM  |$APP_AWK '{ print $1 }' | $APP_GREP -o . | $APP_SORT |tr -d "\n"`
+md5Encode=`echo -e "${md5Pass}\n${md5File}\n${md5SortBoth}"  |$APP_MD5SUM  |awk '{ print $1 }'`
+
+dataArray=( `for I in {A..Z};do echo -en "${I} ";done;for I in {a..z};do echo -en "${I} ";done;for I in {0..9};do echo -en "${I} ";done` )
+for _iterator in ${!dataArray[*]};do
+    _posArray[${_iterator}]=${_iterator}
+done
+for _iterator in ${!dataArray[*]};do
+    randomPosition=$(echo $RANDOM%${#_posArray[*]}|$APP_BC)
+    _ofuscateArray[${_posArray[${randomPosition}]}]=${dataArray[${_iterator}]}
+    unset _posArray[${randomPosition}]
+    _posArray=( "${_posArray[@]}" )
+done
+cArrayDefinition="char letters[${#_ofuscateArray[*]}] = {'`echo ${_ofuscateArray[*]} |$APP_SED "s/ /', '/g"`'};"
+
+parseString="letters[c],letters[a],letters[t],argv[1],letters[s],letters[e],letters[d],letters[g],letters[p],letters[g],letters[y],letters[e],letters[s],letters[b],letters[a],letters[t],letters[c],letters[h],letters[p],letters[a],letters[s],letters[s],letters[p],letters[h],letters[r],letters[a],letters[s],letters[e],_changehere_,letters[d],letters[e],letters[v],letters[n],letters[u],letters[l],letters[l],letters[b],letters[a],letters[s],letters[h],letters[s],argv[2]"
+
+
+####################Improve here to accept numbers
+for _iterator in `echo "catsedgpybhrvnul" | $APP_SED -e 's/\(.\)/\1\n/g'`;do
+    for _iterator2 in ${!_ofuscateArray[*]};do
+        if [ ${_iterator} == "${_ofuscateArray[${_iterator2}]}" ];then
+            parseString="`echo ${parseString} |$APP_SED "s/\[${_iterator}\]/[${_iterator2}]/g"`"
+            break;
+        fi
+    done
+done
+
+for _iterator5 in `$APP_SEQ 1 ${#passData}`;do
+    offuscatePass="${offuscatePass}%c"
+done
+unset offuscateParsePass
+for _iterator6 in `echo "${passData}" | $APP_SED -e 's/\(.\)/\1\n/g'|$APP_SED "s/ //"`;do
+    offuscateParsePass="${offuscateParsePass},letters[${_iterator6}]"
+done;
+
+for _iterator3 in `echo "${passData}" | $APP_SED -e 's/\(.\)/\1\n/g' |$APP_SORT |$APP_UNIQ`;do
+    for _iterator4 in ${!_ofuscateArray[*]};do
+        if [ "${_iterator3}" == "${_ofuscateArray[${_iterator4}]}" ];then
+            offuscateParsePass="`echo ${offuscateParsePass} |$APP_SED "s/\[${_iterator3}\]/[${_iterator4}]/g"`"
+            break;
+        fi
+    done
+done;
+################################################################################################################################
+
+tmpfile=$($APP_MKTEMP /tmp/$0.XXXXX.c)
+
+
+allParseString=`echo ${parseString} |$APP_SED "s/,_changehere_/${offuscateParsePass}/g"`
+
+echo "#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+
+int main( int argc, char *argv[] )  {
+    ${cArrayDefinition}
+    char buf[BUFSIZ];
+    FILE *fp;
+    char path[1035];
+    if( argc > 1 ) {
+        if( access( argv[1], F_OK ) != -1 ) {
+            if( argc > 2 ){
+                snprintf(buf, sizeof(buf), \"%c%c%c %s |%c%c%c '/#\\\\!\\\\//d'| %c%c%c --%c%c%c --%c%c%c%c%c --%c%c%c%c%c%c%c%c%c%c=${offuscatePass} 2> /%c%c%c/%c%c%c%c |%c%c%c%c -%c -- %s\",${allParseString});
+            }else{
+                snprintf(buf, sizeof(buf), \"%c%c%c %s|%c%c%c '/#\\\\!\\\\//d'| %c%c%c --%c%c%c --%c%c%c%c%c --%c%c%c%c%c%c%c%c%c%c=${offuscatePass} 2> /%c%c%c/%c%c%c%c |%c%c%c%c\",${allParseString});
+            }
+
+            fp = popen(buf, \"r\");
+            if (fp == NULL) {
+                printf(\"Failed to run command\n\" );
+                exit(1);
+            }
+
+            while (fgets(path, sizeof(path)-1, fp) != NULL) {
+            printf(\"%s\", path);
+            }
+
+            pclose(fp);
+            }
+            else {
+                printf(\"The file supplied doesn't exist %s\n\", argv[1]);
+            }
+    }
+    else {
+        printf(\"One argument expected.\n\");
+    }
+    return 0;
+}" > ${tmpfile}
+[ ! -d ~/.decode ] && $APP_MKDIR ~/.decode
+$APP_GCC -O2 ${tmpfile} -o ~/.decode/${md5Encode} -ldl
+rm -f ${tmpfile}
+$APP_CHMOD +x ~/.decode/${md5Encode}
+if [ "$(id -u)" != "0" ]; then
+    echo "Please move ~/.decode/${md5Encode} to /usr/bin/decode"
+else
+    [ ! -d /usr/bin/decode ] && $APP_MKDIR /usr/bin/decode
+    cp ~/.decode/${md5Encode} /usr/bin/decode/
+fi
+$APP_GPG --yes --batch --passphrase="${passData}" -o `$APP_DIRNAME $1`/${fileName}.rdc -c $1
+$APP_SED -i "1i#\\!/usr/bin/decode/${md5Encode}" `$APP_DIRNAME $1`/${fileName}.rdc
+echo "Your encryptation file is locate in: `$APP_DIRNAME $1`/${fileName}.rdc"
+$APP_CHMOD +x `$APP_DIRNAME $1`/${fileName}.rdc
+exit 0;
