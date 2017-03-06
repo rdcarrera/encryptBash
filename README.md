@@ -31,6 +31,16 @@ The usage of the script if the next
         [user@host ~]$ /home/user/passGenerator.rdc "-c 12"
         8B6-_lXXXXX
 
+#Python Code
+
+If you want to encode python code you must encapsulete this in a sub-shell, example:
+
+        /usr/bin/python <<'PYSHELL'
+	import sys
+	print "Hi world from py"
+	print(sys.version)
+	PYSHELL
+
                                                                                                                                                                                                                   
 ### RDCARRERA
 Tap into [Linkedin](https://es.linkedin.com/in/rdcarrera) to see my profesional profile.
