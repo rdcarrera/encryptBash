@@ -3,8 +3,112 @@
 #Created by: @rdcarrera
 #Version: 0.1
 
-[ $# -eq 0 ] && echo "You must give a file" && exit 1;
-[ ! -f $1 ] &&  echo "Sorry the param you enter isn't a file" && exit 1;
+#Cahngelog
+#20170306 - @rdcarrera - r.d.c.d.c.8.8 at gmail dot com 0.1
+	#First Version.
+
+function HelpUsage()
+{
+    echo -e "$0\n\t[PARAMETERS]\n\t\t -f \"file path\"\n\t[OPTIONAL]\n\t\t -c \"Number of character for the password, default 2048\"\n\t\t -p \"Set password, only alphabetics letters\""
+    exit 1;
+}
+
+function CalculateValue()
+{
+    _tempArrayName="ARRAY$1[@]"
+    _tempArray=( "${!_tempArrayName}" )
+    randomPosition=$(echo $RANDOM%${#_tempArray[*]} |$APP_BC )
+    _tempValue=${_tempArray[${randomPosition}]}
+    echo "${_tempValue}"
+}
+
+function SetPassword()
+{
+    ARRAYOFPARAMETERS=( "low" "upper" )
+    ARRAYlow=( a b c d e f g h i j k l m n o p q r s t u v w x y z )
+    ARRAYupper=( A B C D E F G H I J K L M N O P Q R S T U V W X Y Z )
+
+    numberOfOptionals=0
+    for _iteratorOptionals in ${!ARRAYOFPARAMETERS[*]};do
+        _tempVarName="${ARRAYOFPARAMETERS[${_iteratorOptionals}]}Number"
+        [ ! -z ${!_tempVarName} ] && numberOfOptionals=`echo ${numberOfOptionals}+${!_tempVarName}|$APP_BC`
+    done
+
+    [ ${numberOfOptionals} -gt ${charactersNumber} ] && echo "You password lengh specify \"${charactersNumber}\" is less of other parameters \"${numberOfOptionals}\"" && exit 1
+
+    declare -a arrayNumbers
+    for _iteratorArrayNumbersDeclare in `$APP_SEQ 0 $(echo ${charactersNumber}-1|$APP_BC)`;do
+        arrayNumbers[${_iteratorArrayNumbersDeclare}]=${_iteratorArrayNumbersDeclare}
+    done
+
+    autoGenerateCharacterPassword=$(echo ${charactersNumber}-${numberOfOptionals}|$APP_BC)
+
+    declare -a passwordValue
+    for _iteratorOptionals2 in ${!ARRAYOFPARAMETERS[*]};do
+        _tempVarName="${ARRAYOFPARAMETERS[${_iteratorOptionals2}]}Number"
+        if [ ! -z ${!_tempVarName} ] && [ ${!_tempVarName} -gt 0 ];then
+            for _iterator in `$APP_SEQ 1 ${!_tempVarName}`;do
+                characterValue=`CalculateValue ${ARRAYOFPARAMETERS[${_iteratorOptionals2}]}`
+                _tempCharPosition=$(echo $RANDOM%${#arrayNumbers[*]}|$APP_BC)
+                charPosition=arrayNumbers[${_tempCharPosition}]
+                passwordValue[${charPosition}]=${characterValue}
+                unset arrayNumbers[${_tempCharPosition}]
+                arrayNumbers=( "${arrayNumbers[@]}" )
+
+            done
+        fi
+    done
+
+    if [ ${autoGenerateCharacterPassword} -gt 0 ];then
+        for _iteratorAutomatic in `$APP_SEQ 1 ${autoGenerateCharacterPassword}`;do
+            randomArray=$(echo $RANDOM%${#ARRAYOFPARAMETERS[*]}|$APP_BC)
+            characterValue=`CalculateValue ${ARRAYOFPARAMETERS[${randomArray}]}`
+            _tempCharPosition=$(echo $RANDOM%${#arrayNumbers[*]}|$APP_BC)
+            charPosition=arrayNumbers[${_tempCharPosition}]
+            passwordValue[${charPosition}]=${characterValue}
+            unset arrayNumbers[${_tempCharPosition}]
+            arrayNumbers=( "${arrayNumbers[@]}" )
+
+        done
+    fi
+
+    export passData=`echo ${passwordValue[@]} |$APP_SED "s/ //g"`
+}
+
+
+[ $# -eq 0 ] && HelpUsage;
+
+while [[ $# -ge 1 ]];do
+    parseKey="$1"
+    case ${parseKey} in
+        -c|-C|--char)
+            shift 1;
+            charactersNumber=$1
+            _logicValue=0
+            [[ $1 =~ ^-?[0-9]+$ ]] && _logicValue=1
+            [ ${_logicValue} -ne 1 ] && echo "You don't enter a number" && exit 1;
+            echo "Your password lenght is ${charactersNumber}"
+        ;;
+        -f|-F|--file)
+            shift 1;
+            filePath=$1
+            [ ! -f ${filePath} ] &&  echo "Sorry the param you enter isn't a file: $1" && exit 1;
+        ;;
+        -p|-P|--pass|--password)
+            shift 1;
+            passData=$1
+            _logicValue=0
+            [[ ${passData} =~ ^[A-Za-z]+$ ]] && _logicValue=1
+            [ ${_logicValue} -ne 1 ] && echo "Sorry but your password should only have letters, uppers or lower case" && exit 1;
+        ;;
+        *)
+            HelpUsage
+        ;;
+    esac
+    shift 1
+done
+
+[ -z ${filePath} ] && HelpUsage
 
 function CheckAppToConstant()
 {
@@ -44,9 +148,10 @@ CheckAppToConstant APP_DIRNAME /usr/bin/dirname;
 CheckAppToConstant APP_GREP /bin/grep;
 CheckAppToConstant APP_SORT /usr/bin/sort;
 CheckAppToConstant APP_UNIQ /usr/bin/uniq;
+CheckAppToConstant APP_RM /usr/bin/rm;
 
-fileName=`$APP_BASENAME $1 |$APP_AWK -F. '{ print $1 }'`
-md5File=`$APP_MD5SUM $1 |$APP_AWK -F. '{ print $1 }'`
+fileName=`$APP_BASENAME ${filePath} |$APP_AWK -F. '{ print $1 }'`
+md5File=`$APP_MD5SUM ${filePath} |$APP_AWK -F. '{ print $1 }'`
 
 unset _ofuscateArray
 unset dataArray
@@ -54,66 +159,12 @@ unset parseString
 unset offuscatePass
 unset offuscateParsePass
 
-ARRAYOFPARAMETERS=( "low" "upper" )
-ARRAYlow=( a b c d e f g h i j k l m n o p q r s t u v w x y z )
-ARRAYupper=( A B C D E F G H I J K L M N O P Q R S T U V W X Y Z )
-charactersNumber=2000
+[ -z ${charactersNumber} ] && charactersNumber=2048
+[ -z ${passData} ] && SetPassword
 
 
-function CalculateValue()
-{
-    _tempArrayName="ARRAY$1[@]"
-    _tempArray=( "${!_tempArrayName}" )
-    randomPosition=$(echo $RANDOM%${#_tempArray[*]} |$APP_BC )
-    _tempValue=${_tempArray[${randomPosition}]}
-    echo "${_tempValue}"
-}
 
-numberOfOptionals=0
-for _iteratorOptionals in ${!ARRAYOFPARAMETERS[*]};do
-    _tempVarName="${ARRAYOFPARAMETERS[${_iteratorOptionals}]}Number"
-    [ ! -z ${!_tempVarName} ] && numberOfOptionals=`echo ${numberOfOptionals}+${!_tempVarName}|$APP_BC`
-done
 
-[ ${numberOfOptionals} -gt ${charactersNumber} ] && echo "You password lengh specify \"${charactersNumber}\" is less of other parameters \"${numberOfOptionals}\"" && exit 1
-
-declare -a arrayNumbers
-for _iteratorArrayNumbersDeclare in `$APP_SEQ 0 $(echo ${charactersNumber}-1|$APP_BC)`;do
-    arrayNumbers[${_iteratorArrayNumbersDeclare}]=${_iteratorArrayNumbersDeclare}
-done
-
-autoGenerateCharacterPassword=$(echo ${charactersNumber}-${numberOfOptionals}|$APP_BC)
-
-declare -a passwordValue
-for _iteratorOptionals2 in ${!ARRAYOFPARAMETERS[*]};do
-    _tempVarName="${ARRAYOFPARAMETERS[${_iteratorOptionals2}]}Number"
-    if [ ! -z ${!_tempVarName} ] && [ ${!_tempVarName} -gt 0 ];then
-        for _iterator in `$APP_SEQ 1 ${!_tempVarName}`;do
-            characterValue=`CalculateValue ${ARRAYOFPARAMETERS[${_iteratorOptionals2}]}`
-            _tempCharPosition=$(echo $RANDOM%${#arrayNumbers[*]}|$APP_BC)
-            charPosition=arrayNumbers[${_tempCharPosition}]
-            passwordValue[${charPosition}]=${characterValue}
-            unset arrayNumbers[${_tempCharPosition}]
-            arrayNumbers=( "${arrayNumbers[@]}" )
-
-        done
-    fi
-done
-
-if [ ${autoGenerateCharacterPassword} -gt 0 ];then
-    for _iteratorAutomatic in `$APP_SEQ 1 ${autoGenerateCharacterPassword}`;do
-        randomArray=$(echo $RANDOM%${#ARRAYOFPARAMETERS[*]}|$APP_BC)
-        characterValue=`CalculateValue ${ARRAYOFPARAMETERS[${randomArray}]}`
-        _tempCharPosition=$(echo $RANDOM%${#arrayNumbers[*]}|$APP_BC)
-        charPosition=arrayNumbers[${_tempCharPosition}]
-        passwordValue[${charPosition}]=${characterValue}
-        unset arrayNumbers[${_tempCharPosition}]
-        arrayNumbers=( "${arrayNumbers[@]}" )
-
-    done
-fi
-
-passData=`echo ${passwordValue[@]} |sed "s/ //g"`
 
 echo -e "WARNING, keep this in safe plase \nYour pass is: ${passData}"
 
@@ -209,7 +260,7 @@ int main( int argc, char *argv[] )  {
 }" > ${tmpfile}
 [ ! -d ~/.decode ] && $APP_MKDIR ~/.decode
 $APP_GCC -O2 ${tmpfile} -o ~/.decode/${md5Encode} -ldl
-rm -f ${tmpfile}
+$APP_RM -f ${tmpfile}
 $APP_CHMOD +x ~/.decode/${md5Encode}
 if [ "$(id -u)" != "0" ]; then
     echo "Please move ~/.decode/${md5Encode} to /usr/bin/decode"
@@ -217,8 +268,8 @@ else
     [ ! -d /usr/bin/decode ] && $APP_MKDIR /usr/bin/decode
     cp ~/.decode/${md5Encode} /usr/bin/decode/
 fi
-$APP_GPG --yes --batch --passphrase="${passData}" -o `$APP_DIRNAME $1`/${fileName}.rdc -c $1
-$APP_SED -i "1i#\\!/usr/bin/decode/${md5Encode}" `$APP_DIRNAME $1`/${fileName}.rdc
-echo "Your encryptation file is locate in: `$APP_DIRNAME $1`/${fileName}.rdc"
-$APP_CHMOD +x `$APP_DIRNAME $1`/${fileName}.rdc
+$APP_GPG --yes --batch --passphrase="${passData}" -o `$APP_DIRNAME ${filePath}`/${fileName}.rdc -c ${filePath}
+$APP_SED -i "1i#\\!/usr/bin/decode/${md5Encode}" `$APP_DIRNAME ${filePath}`/${fileName}.rdc
+echo "Your encryptation file is locate in: `$APP_DIRNAME ${filePath}`/${fileName}.rdc"
+$APP_CHMOD +x `$APP_DIRNAME ${filePath}`/${fileName}.rdc
 exit 0;
