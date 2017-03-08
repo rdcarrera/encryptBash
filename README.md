@@ -1,7 +1,7 @@
 #encryptBash
 This project born of need to encode some bash scripts.
 
-The usage of the script if the next
+The usage of the script: 
 
     ./bash-compile
         [PARAMETERS]
