@@ -167,7 +167,7 @@ unset offuscateParsePass
 
 
 
-echo -e "WARNING, keep this in safe plase \nYour pass is: ${passData}"
+echo -e "WARNING, keep this in safe place \nYour pass is: ${passData}"
 
 md5Pass=`echo ${passData} |$APP_MD5SUM |$APP_AWK '{ print $1 }'`
 md5SortBoth=`echo -e "${md5Pass}\n${md5File}"  |$APP_MD5SUM  |$APP_AWK '{ print $1 }' | $APP_GREP -o . | $APP_SORT |tr -d "\n"`
